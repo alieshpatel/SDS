@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useUser } from '@clerk/clerk-react';
 import { AlertCircle, PlusCircle, LayoutList } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api/complaints';
-const API_HOUSES = 'http://localhost:5000/api/houses';
+const API_URL = '/api/complaints';
+const API_HOUSES = '/api/houses';
 
 function MyComplaints() {
   const { user } = useUser();
@@ -19,12 +19,12 @@ function MyComplaints() {
 
   const fetchData = async () => {
     try {
-      const hRes = await axios.get(`${API_HOUSES}/my/${user.id}`);
+      const hRes = await api.get(`${API_HOUSES}/my/${user.id}`);
       const userHouse = hRes.data;
       setHouses(userHouse ? [userHouse] : []);
       setFormData(prev => ({ ...prev, houseId: userHouse?._id || '' }));
       
-      const cRes = await axios.get(`${API_URL}/my/${user.id}`);
+      const cRes = await api.get(`${API_URL}/my/${user.id}`);
       setComplaints(cRes.data);
     } catch(err) {
       console.error(err);
@@ -34,7 +34,7 @@ function MyComplaints() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(API_URL, formData);
+      await api.post(API_URL, formData);
       setFormData({ houseId: '', title: '', description: '' });
       setIsFormOpen(false);
       fetchData();

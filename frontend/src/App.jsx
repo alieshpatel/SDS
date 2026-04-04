@@ -1,7 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SignedIn, SignedOut, SignInButton, useUser } from "@clerk/clerk-react";
 import { Toaster, toast } from 'react-hot-toast';
-
+import { useState, useEffect } from 'react';
+import api from './api/axios';
 // Globally seamlessly convert all system alerts into elegant UI toasts
 window.alert = (message) => {
   const str = message ? message.toString().toLowerCase() : '';
@@ -36,6 +37,33 @@ import MyReligiousFunds from './pages/owner/MyReligiousFunds';
 import Welcome from './pages/Welcome';
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Ping the backend to wake it up
+        await api.get('/api/houses');
+      } catch (err) {
+        console.log("Retrying...");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-lg font-medium text-slate-700 animate-pulse">Waking up server (may take up to 50s)...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Toaster />

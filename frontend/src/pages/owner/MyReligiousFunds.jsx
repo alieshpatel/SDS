@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useUser } from '@clerk/clerk-react';
 import { HeartHandshake, Calendar, Filter } from 'lucide-react';
 
-const API_FUNDS = 'http://localhost:5000/api/religious';
+const API_FUNDS = '/api/religious';
 
 function MyReligiousFunds() {
   const { user } = useUser();
@@ -14,7 +14,7 @@ function MyReligiousFunds() {
   useEffect(() => {
     const fetchFunds = async () => {
       try {
-        const res = await axios.get(`${API_FUNDS}/my/${user.id}`);
+        const res = await api.get(`${API_FUNDS}/my/${user.id}`);
         setFunds(res.data);
       } catch(err) {
         console.error(err);

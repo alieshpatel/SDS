@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { PlusCircle, Receipt, Calendar, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const API_MAINT = 'http://localhost:5000/api/maintenances';
-const API_HOUSES = 'http://localhost:5000/api/houses';
+const API_MAINT = '/api/maintenances';
+const API_HOUSES = '/api/houses';
 
 function MaintenanceAdmin() {
   const [records, setRecords] = useState([]);
@@ -144,11 +144,11 @@ function MaintenanceAdmin() {
 
   const fetchData = async () => {
     try {
-      const hRes = await axios.get(API_HOUSES);
+      const hRes = await api.get(API_HOUSES);
       setHouses(hRes.data);
-      const mRes = await axios.get(API_MAINT);
+      const mRes = await api.get(API_MAINT);
       setRecords(mRes.data);
-      const cRes = await axios.get('http://localhost:5000/api/categories/DueType');
+      const cRes = await api.get('/api/categories/DueType');
       setCategories(cRes.data);
     } catch(err) {
       console.error(err);
@@ -158,7 +158,7 @@ function MaintenanceAdmin() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(API_MAINT, formData);
+      await api.post(API_MAINT, formData);
       setFormData({ houseId: '', month: '', year: new Date().getFullYear(), amount: '', subject: '', isHistorical: false, transactionDate: '', paymentMode: 'Cash' });
       setIsFormOpen(false);
       fetchData();
@@ -171,7 +171,7 @@ function MaintenanceAdmin() {
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/debits', { ...expenseData, paymentMode: 'Cash' });
+      await api.post('/api/debits', { ...expenseData, paymentMode: 'Cash' });
       setExpenseData({ expenseName: '', vendorName: '', amount: '', description: '' });
       setIsExpenseOpen(false);
       toast.success('Society expense logged successfully.', { duration: 4000 });
@@ -184,7 +184,7 @@ function MaintenanceAdmin() {
     e.preventDefault();
     if (!newCatName.trim()) return;
     try {
-      await axios.post('http://localhost:5000/api/categories', { name: newCatName, type: 'DueType' });
+      await api.post('/api/categories', { name: newCatName, type: 'DueType' });
       setNewCatName('');
       fetchData();
       toast.success("Due type added.");
@@ -194,7 +194,7 @@ function MaintenanceAdmin() {
   const handleDeleteCategory = async (id) => {
     if(!window.confirm('Delete this due type?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/categories/${id}`);
+      await api.delete(`/api/categories/${id}`);
       fetchData();
       setFormData({...formData, subject: ''});
       toast.success("Due type deleted.");
@@ -408,14 +408,14 @@ function MaintenanceAdmin() {
                              <>
                                <button onClick={async () => {
                                  try {
-                                   await axios.put(`${API_MAINT}/${r._id}`, { adminApproved: true });
+                                   await api.put(`${API_MAINT}/${r._id}`, { adminApproved: true });
                                    fetchData();
                                    toast.success('Payment Approved!');
                                  } catch(err) { toast.error('Approval failed'); }
                                }} className="ml-3 text-emerald-600 hover:text-emerald-800 text-xs font-bold hover:underline">Approve</button>
                                <button onClick={async () => {
                                  try {
-                                   await axios.put(`${API_MAINT}/${r._id}`, { status: 'Pending', paidAmount: 0, paymentMode: 'None', rebateApplied: false, rebateAmount: 0, financialYear: '' });
+                                   await api.put(`${API_MAINT}/${r._id}`, { status: 'Pending', paidAmount: 0, paymentMode: 'None', rebateApplied: false, rebateAmount: 0, financialYear: '' });
                                    fetchData();
                                    toast.success('Payment Declined and Restored to Pending.');
                                  } catch(err) { toast.error('Decline failed'); }

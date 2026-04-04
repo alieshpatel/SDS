@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useUser } from '@clerk/clerk-react';
 import { ShieldCheck, CalendarCheck, Home } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 function OwnerDashboard() {
   const { user } = useUser();
@@ -18,7 +18,7 @@ function OwnerDashboard() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const hRes = await axios.get(`${API_URL}/houses/my/${user.id}`);
+        const hRes = await api.get(`${API_URL}/houses/my/${user.id}`);
         setHouseInfo(hRes.data);
         if (hRes.data) {
           setOnboardData({
@@ -29,8 +29,8 @@ function OwnerDashboard() {
           });
         }
         const [mRes, cRes] = await Promise.all([
-          axios.get(`${API_URL}/maintenances/my/${user.id}`),
-          axios.get(`${API_URL}/complaints/my/${user.id}`)
+          api.get(`${API_URL}/maintenances/my/${user.id}`),
+          api.get(`${API_URL}/complaints/my/${user.id}`)
         ]);
         
         setStats({
@@ -51,7 +51,7 @@ function OwnerDashboard() {
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const res = await axios.post(`${API_URL}/houses/link-user`, {
+      const res = await api.post(`${API_URL}/houses/link-user`, {
         clerkUserId: user.id,
         ownerName: user.fullName || user.firstName || 'Owner',
         ...onboardData

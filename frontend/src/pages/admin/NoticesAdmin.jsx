@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { PlusCircle, Megaphone, Calendar, Trash2 } from 'lucide-react';
 
-const API_NOTICES = 'http://localhost:5000/api/notices';
+const API_NOTICES = '/api/notices';
 
 function NoticesAdmin() {
   const [notices, setNotices] = useState([]);
@@ -18,7 +18,7 @@ function NoticesAdmin() {
 
   const fetchNotices = async () => {
     try {
-      const res = await axios.get(API_NOTICES);
+      const res = await api.get(API_NOTICES);
       setNotices(res.data);
     } catch(err) {
       console.error(err);
@@ -29,9 +29,9 @@ function NoticesAdmin() {
     e.preventDefault();
     try {
       if (editId) {
-        await axios.put(`${API_NOTICES}/${editId}`, formData);
+        await api.put(`${API_NOTICES}/${editId}`, formData);
       } else {
-        await axios.post(API_NOTICES, formData);
+        await api.post(API_NOTICES, formData);
       }
       setFormData({ title: '', content: '' });
       setEditId(null);
@@ -57,7 +57,7 @@ function NoticesAdmin() {
   const handleDelete = async (id) => {
     if(!window.confirm("Delete this notice permanently?")) return;
     try {
-      await axios.delete(`${API_NOTICES}/${id}`);
+      await api.delete(`${API_NOTICES}/${id}`);
       fetchNotices();
     } catch (err) {
       alert("Error deleting notice");

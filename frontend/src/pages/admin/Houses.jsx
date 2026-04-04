@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { Home, Users, Phone, MapPin, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const API_URL = 'http://localhost:5000/api/houses';
+const API_URL = '/api/houses';
 
 function Houses() {
   const [houses, setHouses] = useState([]);
@@ -31,7 +31,7 @@ function Houses() {
 
   const fetchHouses = async () => {
     try {
-      const res = await axios.get(API_URL);
+      const res = await api.get(API_URL);
       setHouses(res.data);
     } catch(err) {
       console.error(err);
@@ -42,9 +42,9 @@ function Houses() {
     e.preventDefault();
     try {
       if (editId) {
-        await axios.put(`${API_URL}/${editId}`, formData);
+        await api.put(`${API_URL}/${editId}`, formData);
       } else {
-        await axios.post(API_URL, formData);
+        await api.post(API_URL, formData);
       }
       setFormData({ houseId: '', propertyType: 'House', ownerName: '', contact: '' });
       setIsFormOpen(false);
@@ -66,7 +66,7 @@ function Houses() {
   const handleUnlinkUser = async (id) => {
     if (!window.confirm("Are you sure you want to unlink the registered resident? This allows a new owner to login and claim this house.")) return;
     try {
-      await axios.post(`${API_URL}/unlink/${id}`);
+      await api.post(`${API_URL}/unlink/${id}`);
       fetchHouses();
       setSelectedHouse({...selectedHouse, clerkUserId: null});
       toast.success("Resident account unlinked successfully. A new owner can now register.");

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { Megaphone, Calendar, Info } from 'lucide-react';
 
-const API_NOTICES = 'http://localhost:5000/api/notices';
+const API_NOTICES = '/api/notices';
 
 function NoticeBoard() {
   const [notices, setNotices] = useState([]);
@@ -10,7 +10,7 @@ function NoticeBoard() {
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        const res = await axios.get(API_NOTICES);
+        const res = await api.get(API_NOTICES);
         setNotices(res.data);
       } catch(err) {
         console.error(err);

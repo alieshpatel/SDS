@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { PieChart, TrendingUp, TrendingDown, DollarSign, Wallet, Landmark, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 
-const API_MAINT = 'http://localhost:5000/api/maintenances';
-const API_DEBITS = 'http://localhost:5000/api/debits';
-const API_RELIGIOUS = 'http://localhost:5000/api/religious';
-const API_BANK = 'http://localhost:5000/api/bank';
+const API_MAINT = '/api/maintenances';
+const API_DEBITS = '/api/debits';
+const API_RELIGIOUS = '/api/religious';
+const API_BANK = '/api/bank';
 
 function Reports() {
   const [activeTab, setActiveTab] = useState('maintenance');
@@ -131,10 +131,10 @@ function Reports() {
 
   const fetchData = async () => {
     try {
-      const mRes = await axios.get(API_MAINT);
-      const dRes = await axios.get(API_DEBITS);
-      const rRes = await axios.get(API_RELIGIOUS);
-      const bRes = await axios.get(API_BANK);
+      const mRes = await api.get(API_MAINT);
+      const dRes = await api.get(API_DEBITS);
+      const rRes = await api.get(API_RELIGIOUS);
+      const bRes = await api.get(API_BANK);
       setMaintenance(mRes.data);
       setExpenses(dRes.data);
       setReligious(rRes.data);
@@ -391,7 +391,7 @@ function Reports() {
                  <form onSubmit={async (e) => {
                     e.preventDefault();
                     try {
-                      await axios.post(API_BANK, bankFormData);
+                      await api.post(API_BANK, bankFormData);
                       setIsBankModalOpen(false);
                       setBankFormData({ subject: '', type: 'Credit', amount: '', interestAmount: '', description: '' });
                       fetchData();

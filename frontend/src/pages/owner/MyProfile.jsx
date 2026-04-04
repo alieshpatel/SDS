@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useUser } from '@clerk/clerk-react';
 import { User, Users, Car, CreditCard, Plus, Trash2, Save, ExternalLink } from 'lucide-react';
 
-const API_HOUSES = 'http://localhost:5000/api/houses';
+const API_HOUSES = '/api/houses';
 
 function MyProfile() {
   const { user } = useUser();
@@ -24,7 +24,7 @@ function MyProfile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`${API_HOUSES}/my/${user.id}`);
+      const res = await api.get(`${API_HOUSES}/my/${user.id}`);
       if (res.data) {
         setHouse(res.data);
         setFormData({
@@ -47,7 +47,7 @@ function MyProfile() {
     setSuccessMsg('');
     try {
       if(!house) return;
-      await axios.put(`${API_HOUSES}/${house._id}`, formData);
+      await api.put(`${API_HOUSES}/${house._id}`, formData);
       setSuccessMsg('Profile updated successfully!');
       setTimeout(() => setSuccessMsg(''), 4000);
       fetchProfile();

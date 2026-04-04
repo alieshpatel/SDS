@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api/complaints';
+const API_URL = '/api/complaints';
 
 function ComplaintsAdmin() {
   const [complaints, setComplaints] = useState([]);
@@ -13,7 +13,7 @@ function ComplaintsAdmin() {
 
   const fetchData = async () => {
     try {
-      const cRes = await axios.get(API_URL);
+      const cRes = await api.get(API_URL);
       setComplaints(cRes.data);
     } catch(err) {
       console.error(err);
@@ -24,7 +24,7 @@ function ComplaintsAdmin() {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`${API_URL}/${id}`, { status });
+      await api.put(`${API_URL}/${id}`, { status });
       fetchData();
     } catch(err) {
       console.error(err);

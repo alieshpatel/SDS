@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { Users, FileText, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 function AdminDashboard() {
   const [stats, setStats] = useState({ houses: 0, maintenanceRecords: 0, complaints: 0 });
@@ -13,9 +13,9 @@ function AdminDashboard() {
     const fetchStats = async () => {
       try {
         const [h, m, c] = await Promise.all([
-          axios.get(`${API_URL}/houses`),
-          axios.get(`${API_URL}/maintenances`),
-          axios.get(`${API_URL}/complaints`)
+          api.get(`${API_URL}/houses`),
+          api.get(`${API_URL}/maintenances`),
+          api.get(`${API_URL}/complaints`)
         ]);
         setStats({
           houses: h.data.length,

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { PlusCircle, HeartHandshake, Calendar } from 'lucide-react';
 
-const API_FUNDS = 'http://localhost:5000/api/religious';
-const API_HOUSES = 'http://localhost:5000/api/houses';
+const API_FUNDS = '/api/religious';
+const API_HOUSES = '/api/houses';
 
 function ReligiousFunds() {
   const [funds, setFunds] = useState([]);
@@ -91,11 +91,11 @@ function ReligiousFunds() {
 
   const fetchData = async () => {
     try {
-      const hRes = await axios.get(API_HOUSES);
+      const hRes = await api.get(API_HOUSES);
       setHouses(hRes.data);
-      const fRes = await axios.get(API_FUNDS);
+      const fRes = await api.get(API_FUNDS);
       setFunds(fRes.data);
-      const cRes = await axios.get('http://localhost:5000/api/categories/Festival');
+      const cRes = await api.get('/api/categories/Festival');
       setCategories(cRes.data);
     } catch(err) {
       console.error(err);
@@ -110,7 +110,7 @@ function ReligiousFunds() {
         delete payload.memberId;
       }
 
-      await axios.post(API_FUNDS, payload);
+      await api.post(API_FUNDS, payload);
       setFormData({ eventName: '', type: 'Donation', amount: '', memberId: '', description: '' });
       setIsFormOpen(false);
       fetchData();
@@ -123,7 +123,7 @@ function ReligiousFunds() {
     e.preventDefault();
     if (!newCatName.trim()) return;
     try {
-      await axios.post('http://localhost:5000/api/categories', { name: newCatName, type: 'Festival' });
+      await api.post('/api/categories', { name: newCatName, type: 'Festival' });
       setNewCatName('');
       fetchData();
     } catch(err) { alert(err.message); }
@@ -132,7 +132,7 @@ function ReligiousFunds() {
   const handleDeleteCategory = async (id) => {
     if(!window.confirm('Delete this festival name?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/categories/${id}`);
+      await api.delete(`/api/categories/${id}`);
       fetchData();
       setFormData({...formData, eventName: ''});
     } catch(err) { alert(err.message); }

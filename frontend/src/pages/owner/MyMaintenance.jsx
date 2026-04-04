@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useUser } from '@clerk/clerk-react';
 import { CreditCard, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const API_MAINT = 'http://localhost:5000/api/maintenances';
-const API_PAY = 'http://localhost:5000/api/payments';
+const API_MAINT = '/api/maintenances';
+const API_PAY = '/api/payments';
 
 function MyMaintenance() {
   const { user } = useUser();
@@ -38,9 +38,9 @@ function MyMaintenance() {
 
   const fetchData = async () => {
     try {
-      const hRes = await axios.get(`http://localhost:5000/api/houses/my/${user.id}`);
+      const hRes = await api.get(`/api/houses/my/${user.id}`);
       setHouse(hRes.data);
-      const res = await axios.get(`${API_MAINT}/my/${user.id}`);
+      const res = await api.get(`${API_MAINT}/my/${user.id}`);
       setRecords(res.data);
     } catch(err) {
       console.error(err);
@@ -76,7 +76,7 @@ function MyMaintenance() {
      // Process Cash
      try {
       if (paymentModal.isAdvance) {
-        await axios.post(`${API_MAINT}/pay-advance`, {
+        await api.post(`${API_MAINT}/pay-advance`, {
           houseId: house._id,
           monthsToPay: paymentModal.months,
           paymentMode: mode,
@@ -86,7 +86,7 @@ function MyMaintenance() {
         fetchData();
         toast.success('Advance/Monthly Payment successfully submitted.');
       } else {
-        await axios.post(API_PAY, {
+        await api.post(API_PAY, {
           houseId: paymentModal.maint.houseId._id,
           maintenanceId: paymentModal.maint._id,
           amount: paymentModal.maint.pendingAmount,
