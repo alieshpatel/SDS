@@ -45,5 +45,9 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/categories', categoryRoutes);
 
+app.get("/", async (req, res) => {
+  res.send("welcome to backend of SDS");
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
