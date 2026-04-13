@@ -70,27 +70,27 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-black">
+      <div className="flex h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center w-full max-w-sm px-8 relative animate-in fade-in zoom-in duration-700">
-           {/* Stylized SDS Logo to match user reference image */}
+           {/* Stylized SDS Logo */}
            <div className="flex items-center justify-center mb-12">
-             <div className="relative flex items-center justify-center space-x-1">
-               <span className="text-white font-extrabold tracking-tighter" style={{ fontSize: '6rem', lineHeight: '1' }}>S</span>
-               <span className="text-white font-extrabold tracking-tighter relative" style={{ fontSize: '6rem', lineHeight: '1' }}>
-                 SDS
+             <div className="relative flex items-center justify-center space-x-[2px]">
+               <span className="text-slate-900 font-extrabold tracking-tighter" style={{ fontSize: '6rem', lineHeight: '1' }}>S</span>
+               <span className="text-slate-900 font-extrabold tracking-tighter relative" style={{ fontSize: '6rem', lineHeight: '1' }}>
+                 D
                </span>
                <span className="text-orange-600 font-extrabold tracking-tighter" style={{ fontSize: '6rem', lineHeight: '1' }}>S</span>
              </div>
            </div>
 
            {/* Precision Progress Bar */}
-           <div className="w-full bg-slate-800 rounded-full h-1 mb-4 overflow-hidden shadow-inner">
-             <div className="bg-orange-600 h-1 transition-all duration-300 shadow-[0_0_15px_2px_rgba(234,88,12,0.8)]" style={{ width: `${progress}%` }}></div>
+           <div className="w-full bg-slate-200 rounded-full h-1.5 mb-4 overflow-hidden shadow-inner flex-shrink-0">
+             <div className="bg-orange-500 h-1.5 transition-all duration-300 shadow-[0_0_10px_rgba(249,115,22,0.5)]" style={{ width: `${progress}%` }}></div>
            </div>
            
-           <div className="flex justify-between w-full text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+           <div className="flex justify-between w-full text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
              <span className="animate-pulse">Loading App</span>
-             <span className="text-orange-500">{progress}%</span>
+             <span className="text-orange-600">{progress}%</span>
            </div>
         </div>
       </div>
