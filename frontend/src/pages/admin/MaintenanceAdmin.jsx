@@ -16,7 +16,7 @@ function MaintenanceAdmin() {
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
-  const [expenseData, setExpenseData] = useState({ expenseName: '', vendorName: '', amount: '', description: '' });
+  const [expenseData, setExpenseData] = useState({ expenseName: '', vendorName: '', amount: '', description: '', isHistorical: false, transactionDate: '', paymentMode: 'Cash' });
   const [searchTerm, setSearchTerm] = useState('');
   const [exportStart, setExportStart] = useState('');
   const [exportEnd, setExportEnd] = useState('');
@@ -171,12 +171,22 @@ function MaintenanceAdmin() {
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/debits', { ...expenseData, paymentMode: 'Cash' });
-      setExpenseData({ expenseName: '', vendorName: '', amount: '', description: '' });
+      const payload = { 
+         expenseName: expenseData.expenseName,
+         vendorName: expenseData.vendorName,
+         amount: expenseData.amount,
+         description: expenseData.description,
+         paymentMode: expenseData.paymentMode || 'Cash' 
+      };
+      if (expenseData.isHistorical && expenseData.transactionDate) {
+        payload.date = expenseData.transactionDate;
+      }
+      await api.post('/api/debits', payload);
+      setExpenseData({ expenseName: '', vendorName: '', amount: '', description: '', isHistorical: false, transactionDate: '', paymentMode: 'Cash' });
       setIsExpenseOpen(false);
       toast.success('Society expense logged successfully.', { duration: 4000 });
     } catch(err) {
-      toast.error("Error adding expense: " + err.message);
+      toast.error("Error adding expense: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -256,6 +266,29 @@ function MaintenanceAdmin() {
                  <label className="block text-sm font-semibold text-slate-700 mb-1">Additional Notes</label>
                  <input className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-amber-500 transition" placeholder="Receipt info or notes" value={expenseData.description} onChange={e=>setExpenseData({...expenseData, description:e.target.value})} />
               </div>
+
+              <div className="md:col-span-2 lg:col-span-4 mt-1 bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+                 <label className="flex items-center gap-2 cursor-pointer">
+                   <input type="checkbox" className="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500" checked={expenseData.isHistorical} onChange={e => setExpenseData({...expenseData, isHistorical: e.target.checked})} />
+                   <span className="text-sm font-bold text-amber-900">This is a past / historical expense record</span>
+                 </label>
+                 {expenseData.isHistorical && (
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 animate-in slide-in-from-top-2">
+                     <div>
+                       <label className="block text-xs font-semibold text-slate-700 mb-1">Exact Payment Date</label>
+                       <input type="date" required className="w-full border border-slate-200 bg-white p-2.5 rounded-lg outline-none focus:border-amber-500 transition text-sm" value={expenseData.transactionDate} onChange={e => setExpenseData({...expenseData, transactionDate: e.target.value})} />
+                     </div>
+                     <div>
+                       <label className="block text-xs font-semibold text-slate-700 mb-1">Payment Mode</label>
+                       <select required className="w-full border border-slate-200 bg-white p-2.5 rounded-lg outline-none focus:border-amber-500 transition text-sm" value={expenseData.paymentMode} onChange={e => setExpenseData({...expenseData, paymentMode: e.target.value})}>
+                         <option value="Cash">Cash</option>
+                         <option value="Online">Online</option>
+                       </select>
+                     </div>
+                   </div>
+                 )}
+              </div>
+
               <button className="bg-amber-500 text-white p-3 rounded-xl font-bold hover:bg-amber-600 transition md:col-span-2 lg:col-span-4 mt-2 shadow-sm flex items-center justify-center gap-2">
                  Log Society Expense
               </button>
