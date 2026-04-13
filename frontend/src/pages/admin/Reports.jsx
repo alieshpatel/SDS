@@ -47,7 +47,7 @@ function Reports() {
     ...(Array.isArray(maintenance) ? maintenance : []).filter(m => m.status === 'Paid').map(m => ({ _id: m._id, date: m.transactionDate || m.updatedAt || new Date().toISOString(), subject: m.subject || 'Maintenance', desc: m.houseId?.houseId || 'System', amount: m.paidAmount !== undefined ? m.paidAmount : m.amount, type: 'Credit', source: 'Maintenance', mode: m.paymentMode || 'Cash', displayMonth: m.month, rebateApplied: m.rebateApplied })),
     ...(Array.isArray(bankTxns) ? bankTxns : []).map(b => ({ _id: b._id, date: b.date, subject: b.subject + (b.interestAmount ? ` (Incl. ₹${b.interestAmount} Int.)` : ''), desc: b.description || 'Bank Txn', amount: b.amount + (b.interestAmount || 0), type: b.type, source: 'Bank Record', mode: b.mode || 'Online' })),
     ...(Array.isArray(expenses) ? expenses : []).map(e => ({ _id: e._id, date: e.date, subject: e.expenseName, desc: e.vendorName || '-', amount: e.amount, type: 'Debit', source: 'Maintenance Expense', mode: e.paymentMode || 'Cash' })),
-    ...(Array.isArray(bankTxns) ? bankTxns : []).map(b => ({ _id: b._id + '_contra', date: b.date, subject: 'Contra: ' + b.subject + (b.interestAmount ? ` (Incl. ₹${b.interestAmount} Int.)` : ''), desc: b.description || 'Transfer to/from Bank', amount: b.amount + (b.interestAmount || 0), type: b.type === 'Credit' ? 'Debit' : 'Credit', source: 'Bank Record Contra', mode: 'Cash' }))
+    ...(Array.isArray(bankTxns) ? bankTxns : []).filter(b => !(b.type === 'Credit' && (b.subject || '').toLowerCase().includes('interest'))).map(b => ({ _id: b._id + '_contra', date: b.date, subject: 'Contra: ' + b.subject, desc: b.description || 'Transfer to/from Bank', amount: b.amount, type: b.type === 'Credit' ? 'Debit' : 'Credit', source: 'Bank Record Contra', mode: 'Cash' }))
   ].sort((a, b) => parseDataDateStr(b.date) - parseDataDateStr(a.date));
 
   const filteredBank = bankStatement.filter(b => 
@@ -475,10 +475,16 @@ function Reports() {
          const periodMaint = maintenance.filter(m => m.status === 'Paid' && parseDataDateStr(m.month).getTime() >= ms && parseDataDateStr(m.month).getTime() <= me);
          const periodExp = expenses.filter(e => new Date(e.date).getTime() >= ms && new Date(e.date).getTime() <= me);
          
+         const totalBankInt = Array.isArray(bankTxns) ? bankTxns.filter(b => b.type === 'Credit' && new Date(b.date).getTime() >= ms && new Date(b.date).getTime() <= me).reduce((acc, b) => {
+            if (b.interestAmount > 0) return acc + b.interestAmount;
+            if ((b.subject || '').toLowerCase().includes('interest')) return acc + b.amount;
+            return acc;
+         }, 0) : 0;
+
          const periodRelDon = religious.filter(r => r.type === 'Donation' && new Date(r.date).getTime() >= ms && new Date(r.date).getTime() <= me);
          const periodRelExp = religious.filter(r => r.type === 'Expense' && new Date(r.date).getTime() >= ms && new Date(r.date).getTime() <= me);
          
-         const totalSocCr = periodMaint.reduce((s, m) => s + (m.paidAmount || m.amount), 0);
+         const totalSocCr = periodMaint.reduce((s, m) => s + (m.paidAmount || m.amount), 0) + totalBankInt;
          const totalSocDr = periodExp.reduce((s, e) => s + e.amount, 0);
          const socBal = totalSocCr - totalSocDr;
 
@@ -491,6 +497,9 @@ function Reports() {
             acc[subj] = (acc[subj] || 0) + (m.paidAmount || m.amount);
             return acc;
          }, {});
+         if (totalBankInt > 0) {
+            dueTotals['Bank Interest'] = totalBankInt;
+         }
 
          const expTotals = periodExp.reduce((acc, e) => {
             const subj = e.expenseName || 'Expense';
