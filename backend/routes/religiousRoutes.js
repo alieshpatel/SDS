@@ -23,7 +23,11 @@ router.get('/my/:clerkUserId', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const newFundRecord = new ReligiousFund(req.body);
+        const payload = { ...req.body };
+        if (payload.isHistorical && payload.transactionDate) {
+            payload.date = new Date(payload.transactionDate);
+        }
+        const newFundRecord = new ReligiousFund(payload);
         await newFundRecord.save();
         res.status(201).json(newFundRecord);
     } catch (err) {

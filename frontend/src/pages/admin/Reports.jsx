@@ -46,7 +46,8 @@ function Reports() {
   const bankStatement = [
     ...(Array.isArray(maintenance) ? maintenance : []).filter(m => m.status === 'Paid').map(m => ({ _id: m._id, date: m.transactionDate || m.updatedAt || new Date().toISOString(), subject: m.subject || 'Maintenance', desc: m.houseId?.houseId || 'System', amount: m.paidAmount !== undefined ? m.paidAmount : m.amount, type: 'Credit', source: 'Maintenance', mode: m.paymentMode || 'Cash', displayMonth: m.month, rebateApplied: m.rebateApplied })),
     ...(Array.isArray(bankTxns) ? bankTxns : []).map(b => ({ _id: b._id, date: b.date, subject: b.subject + (b.interestAmount ? ` (Incl. ₹${b.interestAmount} Int.)` : ''), desc: b.description || 'Bank Txn', amount: b.amount + (b.interestAmount || 0), type: b.type, source: 'Bank Record', mode: b.mode || 'Online' })),
-    ...(Array.isArray(expenses) ? expenses : []).map(e => ({ _id: e._id, date: e.date, subject: e.expenseName, desc: e.vendorName || '-', amount: e.amount, type: 'Debit', source: 'Maintenance Expense', mode: e.paymentMode || 'Cash' }))
+    ...(Array.isArray(expenses) ? expenses : []).map(e => ({ _id: e._id, date: e.date, subject: e.expenseName, desc: e.vendorName || '-', amount: e.amount, type: 'Debit', source: 'Maintenance Expense', mode: e.paymentMode || 'Cash' })),
+    ...(Array.isArray(bankTxns) ? bankTxns : []).map(b => ({ _id: b._id + '_contra', date: b.date, subject: 'Contra: ' + b.subject + (b.interestAmount ? ` (Incl. ₹${b.interestAmount} Int.)` : ''), desc: b.description || 'Transfer to/from Bank', amount: b.amount + (b.interestAmount || 0), type: b.type === 'Credit' ? 'Debit' : 'Credit', source: 'Bank Record Contra', mode: 'Cash' }))
   ].sort((a, b) => parseDataDateStr(b.date) - parseDataDateStr(a.date));
 
   const filteredBank = bankStatement.filter(b => 
@@ -491,6 +492,24 @@ function Reports() {
             return acc;
          }, {});
 
+         const expTotals = periodExp.reduce((acc, e) => {
+            const subj = e.expenseName || 'Expense';
+            acc[subj] = (acc[subj] || 0) + e.amount;
+            return acc;
+         }, {});
+
+         const relDonTotals = periodRelDon.reduce((acc, r) => {
+            const subj = r.eventName || 'Donation';
+            acc[subj] = (acc[subj] || 0) + r.amount;
+            return acc;
+         }, {});
+
+         const relExpTotals = periodRelExp.reduce((acc, r) => {
+            const subj = r.eventName || 'Expense';
+            acc[subj] = (acc[subj] || 0) + r.amount;
+            return acc;
+         }, {});
+
          return (
          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6 animate-in zoom-in-95">
            <div className="flex justify-between items-center mb-6 border-b pb-4">
@@ -512,15 +531,30 @@ function Reports() {
                     <p key={subj} className="flex justify-between text-xs text-slate-500 mb-1 pl-4"><span className="truncate max-w-[200px]" title={subj}>• {subj}</span> <span>+₹{amt.toLocaleString()}</span></p>
                  ))}
                </div>
-               <p className="flex justify-between text-sm mb-4"><span className="text-slate-700 font-bold">Total Expenses:</span> <span className="font-bold text-rose-600">-₹{totalSocDr.toLocaleString()}</span></p>
+               <p className="flex justify-between text-sm mb-2"><span className="text-slate-700 font-bold">Total Expenses:</span> <span className="font-bold text-rose-600">-₹{totalSocDr.toLocaleString()}</span></p>
+               <div className="mb-4">
+                 {Object.entries(expTotals).map(([subj, amt]) => (
+                    <p key={subj} className="flex justify-between text-xs text-slate-500 mb-1 pl-4"><span className="truncate max-w-[200px]" title={subj}>• {subj}</span> <span className="text-rose-500">-₹{amt.toLocaleString()}</span></p>
+                 ))}
+               </div>
                <div className="pt-3 border-t border-slate-300"><p className="flex justify-between text-lg"><span className="font-bold">Balance P&L:</span> <span className={`font-extrabold ${socBal >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>₹{socBal.toLocaleString()}</span></p></div>
              </div>
              
              <div className="bg-purple-50 border border-purple-100 p-6 rounded-xl">
                <h4 className="text-xl font-bold text-purple-900 mb-4 border-b pb-2">Religious Funds</h4>
-               <p className="flex justify-between text-sm mb-2"><span className="text-purple-700">Total Donations:</span> <span className="font-bold text-emerald-600">+₹{totalRelCr.toLocaleString()}</span></p>
-               <p className="flex justify-between text-sm mb-4"><span className="text-purple-700">Setup Expenses:</span> <span className="font-bold text-rose-600">-₹{totalRelDr.toLocaleString()}</span></p>
-               <div className="pt-3 border-t"><p className="flex justify-between text-lg"><span className="font-bold text-purple-900">Fund Balance:</span> <span className={`font-extrabold ${relBal >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>₹{relBal.toLocaleString()}</span></p></div>
+               <div className="mb-2">
+                 <p className="flex justify-between text-sm font-bold border-b border-purple-200 pb-1 mb-2"><span className="text-purple-800">Total Donations:</span> <span className="text-emerald-700">+₹{totalRelCr.toLocaleString()}</span></p>
+                 {Object.entries(relDonTotals).map(([subj, amt]) => (
+                    <p key={subj} className="flex justify-between text-xs text-purple-600 mb-1 pl-4"><span className="truncate max-w-[200px]" title={subj}>• {subj}</span> <span>+₹{amt.toLocaleString()}</span></p>
+                 ))}
+               </div>
+               <div className="mb-4">
+                 <p className="flex justify-between text-sm font-bold border-b border-purple-200 pb-1 mb-2 mt-4"><span className="text-purple-800">Setup Expenses:</span> <span className="text-rose-600">-₹{totalRelDr.toLocaleString()}</span></p>
+                 {Object.entries(relExpTotals).map(([subj, amt]) => (
+                    <p key={subj} className="flex justify-between text-xs text-purple-600 mb-1 pl-4"><span className="truncate max-w-[200px]" title={subj}>• {subj}</span> <span className="text-rose-500">-₹{amt.toLocaleString()}</span></p>
+                 ))}
+               </div>
+               <div className="pt-3 border-t border-purple-200"><p className="flex justify-between text-lg"><span className="font-bold text-purple-900">Fund Balance:</span> <span className={`font-extrabold ${relBal >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>₹{relBal.toLocaleString()}</span></p></div>
              </div>
            </div>
          </div>

@@ -17,7 +17,10 @@ function ReligiousFunds() {
     type: 'Donation',
     amount: '',
     memberId: '',
-    description: ''
+    description: '',
+    isHistorical: false,
+    transactionDate: '',
+    paymentMode: 'Cash'
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [exportStart, setExportStart] = useState('');
@@ -111,7 +114,7 @@ function ReligiousFunds() {
       }
 
       await api.post(API_FUNDS, payload);
-      setFormData({ eventName: '', type: 'Donation', amount: '', memberId: '', description: '' });
+      setFormData({ eventName: '', type: 'Donation', amount: '', memberId: '', description: '', isHistorical: false, transactionDate: '', paymentMode: 'Cash' });
       setIsFormOpen(false);
       fetchData();
     } catch(err) {
@@ -212,6 +215,28 @@ function ReligiousFunds() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Notes / Description</label>
                 <input className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 transition" placeholder="Cash collection, specific requirements..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
              </div>
+
+             <div className="md:col-span-3 lg:col-span-3 mt-2 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                  <input type="checkbox" className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" checked={formData.isHistorical} onChange={e => setFormData({...formData, isHistorical: e.target.checked})} />
+                  <span className="text-sm font-bold text-indigo-900">This is a past / historical record</span>
+                </label>
+                {formData.isHistorical && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 animate-in slide-in-from-top-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Exact Transaction Date</label>
+                      <input type="date" required className="w-full border border-slate-200 bg-white p-2.5 rounded-lg outline-none focus:border-indigo-500 transition text-sm" value={formData.transactionDate} onChange={e => setFormData({...formData, transactionDate: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Payment Mode</label>
+                      <select required className="w-full border border-slate-200 bg-white p-2.5 rounded-lg outline-none focus:border-indigo-500 transition text-sm" value={formData.paymentMode} onChange={e => setFormData({...formData, paymentMode: e.target.value})}>
+                        <option value="Cash">Cash</option>
+                        <option value="Online">Online</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+             </div>
              
              <button className="bg-slate-900 text-white p-3 rounded-xl font-bold hover:bg-slate-800 transition md:col-span-3 mt-2 shadow-sm flex items-center justify-center gap-2">
                <HeartHandshake size={18} /> Save Record
@@ -229,6 +254,7 @@ function ReligiousFunds() {
                 <th className="px-6 py-4">Record Type</th>
                 <th className="px-6 py-4 text-right">Amount</th>
                 <th className="px-6 py-4">Contributor / Details</th>
+                <th className="px-6 py-4">Payment Mode</th>
                 <th className="px-6 py-4">Date Logged</th>
               </tr>
             </thead>
@@ -252,6 +278,9 @@ function ReligiousFunds() {
                     ) : (
                       f.description || <span className="text-slate-400 italic">No notes</span>
                     )}
+                  </td>
+                  <td className="px-6 py-4 text-slate-600">
+                    <span className="font-bold text-slate-700">{f.paymentMode || 'Cash'}</span>
                   </td>
                   <td className="px-6 py-4 text-slate-500 flex items-center gap-2">
                      <Calendar size={14} className="text-slate-400" />
