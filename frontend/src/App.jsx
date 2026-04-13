@@ -38,6 +38,20 @@ import Welcome from './pages/Welcome';
 
 function App() {
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      interval = setInterval(() => {
+        setProgress(p => {
+           if (p >= 99) return 99; // hold at 99% until actual load finishes
+           return p + 1;
+        });
+      }, 40); // speed up loader mapping close to backend wake time (~4s to reach 99)
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +61,8 @@ function App() {
       } catch (err) {
         console.log("Retrying...");
       } finally {
-        setLoading(false);
+        setProgress(100);
+        setTimeout(() => setLoading(false), 500); // 500ms delay to show 100% gracefully
       }
     };
     fetchData();
@@ -55,10 +70,28 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-lg font-medium text-slate-700 animate-pulse">Waking up server (may take up to 50s)...</p>
+      <div className="flex h-screen items-center justify-center bg-black">
+        <div className="flex flex-col items-center w-full max-w-sm px-8 relative animate-in fade-in zoom-in duration-700">
+           {/* Stylized SDS Logo to match user reference image */}
+           <div className="flex items-center justify-center mb-12">
+             <div className="relative flex items-center justify-center space-x-1">
+               <span className="text-white font-extrabold tracking-tighter" style={{ fontSize: '6rem', lineHeight: '1' }}>S</span>
+               <span className="text-white font-extrabold tracking-tighter relative" style={{ fontSize: '6rem', lineHeight: '1' }}>
+                 SDS
+               </span>
+               <span className="text-orange-600 font-extrabold tracking-tighter" style={{ fontSize: '6rem', lineHeight: '1' }}>S</span>
+             </div>
+           </div>
+
+           {/* Precision Progress Bar */}
+           <div className="w-full bg-slate-800 rounded-full h-1 mb-4 overflow-hidden shadow-inner">
+             <div className="bg-orange-600 h-1 transition-all duration-300 shadow-[0_0_15px_2px_rgba(234,88,12,0.8)]" style={{ width: `${progress}%` }}></div>
+           </div>
+           
+           <div className="flex justify-between w-full text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+             <span className="animate-pulse">Loading App</span>
+             <span className="text-orange-500">{progress}%</span>
+           </div>
         </div>
       </div>
     );
