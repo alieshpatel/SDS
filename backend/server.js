@@ -13,28 +13,33 @@ import complaintRoutes from './routes/complaintRoutes.js';
 import noticeRoutes from './routes/noticeRoutes.js';
 import bankRoutes from './routes/bankRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
-// import './cron/maintenanceCron.js';
 
 dotenv.config();
 
 const app = express();
+
+// ✅ CORS CONFIG (FIXED + SAFE)
+const corsOptions = {
+  origin: ["https://sds-1247.vercel.app"], // 👈 must be array or string (NOT *)
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+// ✅ IMPORTANT: handle preflight requests (THIS WAS MISSING)
+app.options("*", cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors({
-  origin: "https://sds-1247.vercel.app",
-  credentials: true
-}));
 
-// Configure MongoDB URI (default locally for dev)
+// MongoDB
 const mongoURI = process.env.MONGO_URI || 'mongodb+srv://sds_group:SDS%401247@sds.rq78b1s.mongodb.net/sds_database?retryWrites=true&w=majority';
 
-mongoose.connect(mongoURI).then(() => {
-    console.log('Connected to MongoDB');
-}).catch(err => {
-    console.error('MongoDB connection error:', err);
-});
+mongoose.connect(mongoURI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// Use routes
+// Routes
 app.use('/api/houses', houseRoutes);
 app.use('/api/maintenances', maintenanceRoutes);
 app.use('/api/payments', paymentRoutes);
@@ -45,7 +50,8 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/categories', categoryRoutes);
 
-app.get("/", async (req, res) => {
+// Test route
+app.get("/", (req, res) => {
   res.send("welcome to backend of SDS");
 });
 
