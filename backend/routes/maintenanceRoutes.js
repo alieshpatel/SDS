@@ -243,6 +243,35 @@ router.post('/', async (req, res) => {
         const newRecord = new Maintenance(data);
         await newRecord.save();
 
+        if (data.isHistorical) {
+            const Payment = (await import('../models/Payment.js')).default;
+            
+            let finalReceiptNumber = req.body.receiptNumber;
+            if (!finalReceiptNumber) {
+                // Auto-generate numeric receipt number
+                let maxNum = 0;
+                const allPayments = await Payment.find({}, 'receiptNumber');
+                allPayments.forEach(p => {
+                    if (p.receiptNumber && !isNaN(p.receiptNumber)) {
+                        const num = parseInt(p.receiptNumber, 10);
+                        if (num > maxNum) maxNum = num;
+                    }
+                });
+                finalReceiptNumber = (maxNum + 1).toString();
+            }
+
+            const newPayment = new Payment({
+                houseId: newRecord.houseId,
+                maintenanceId: newRecord._id,
+                amount: data.paidAmount,
+                paymentMode: data.paymentMode || 'Cash',
+                date: new Date(data.transactionDate || Date.now()),
+                receiptNumber: finalReceiptNumber,
+                items: [{ dueType: data.subject || 'Maintenance', amount: data.paidAmount, details: data.month }]
+            });
+            await newPayment.save();
+        }
+
         if (data.isHistorical && data.rebateApplied) {
             const House = (await import('../models/House.js')).default;
             const house = await House.findById(data.houseId);

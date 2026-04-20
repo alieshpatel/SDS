@@ -11,25 +11,47 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        // Find highest existing numeric receipt number
-        const lastPayment = await Payment.findOne({}).sort({ createdAt: -1 });
-        let newReceiptNumber = "1";
-        
-        // Let's get all payments to parse max receiptNumber safely
-        const allPayments = await Payment.find({}, 'receiptNumber');
-        let maxNum = 0;
-        allPayments.forEach(p => {
-            if (p.receiptNumber && !isNaN(p.receiptNumber)) {
-                const num = parseInt(p.receiptNumber, 10);
-                if (num > maxNum) {
-                    maxNum = num;
+        let finalReceiptNumber = req.body.receiptNumber;
+        if (!finalReceiptNumber) {
+            let maxNum = 0;
+            const allPayments = await Payment.find({}, 'receiptNumber');
+            allPayments.forEach(p => {
+                if (p.receiptNumber && !isNaN(p.receiptNumber)) {
+                    const num = parseInt(p.receiptNumber, 10);
+                    if (num > maxNum) maxNum = num;
                 }
-            }
-        });
-        newReceiptNumber = (maxNum + 1).toString();
+            });
+            finalReceiptNumber = (maxNum + 1).toString();
+        }
 
-        const newPayment = new Payment({ ...req.body, receiptNumber: newReceiptNumber });
+        const newPayment = new Payment({ ...req.body, receiptNumber: finalReceiptNumber });
         await newPayment.save();
+
+        if (req.body.items && req.body.items.length > 0 && req.body.autoCreateDues) {
+            for (let item of req.body.items) {
+                let period = item.details;
+                if (!period) {
+                   period = String(new Date().getFullYear()) + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                }
+                const [y] = period.split(/[-\s]/);
+                let year = new Date().getFullYear();
+                if (y && !isNaN(parseInt(y))) year = parseInt(y);
+
+                const newMaint = new Maintenance({
+                    houseId: req.body.houseId,
+                    month: period,
+                    year: year,
+                    amount: item.amount,
+                    paidAmount: item.amount,
+                    subject: item.dueType,
+                    status: req.body.isHistorical ? 'Paid' : 'Paid', // Custom receipts issued by admin are Paid immediately
+                    adminApproved: true,
+                    paymentMode: req.body.paymentMode,
+                    transactionDate: req.body.date || Date.now()
+                });
+                await newMaint.save();
+            }
+        }
 
         if (req.body.maintenanceId) {
             const maint = await Maintenance.findById(req.body.maintenanceId);

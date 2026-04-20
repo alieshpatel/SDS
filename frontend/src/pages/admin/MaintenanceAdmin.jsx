@@ -17,7 +17,7 @@ function MaintenanceAdmin() {
   const [newCatName, setNewCatName] = useState('');
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-  const [receiptData, setReceiptData] = useState({ houseId: '', items: [{ dueType: '', amount: '', details: '' }], paymentMode: 'Cash', transactionDate: new Date().toISOString().split('T')[0] });
+  const [receiptData, setReceiptData] = useState({ houseId: '', items: [{ dueType: '', amount: '', details: '' }], paymentMode: 'Cash', transactionDate: new Date().toISOString().split('T')[0], isHistorical: false, receiptNumber: '' });
   const [expenseData, setExpenseData] = useState({ expenseName: '', vendorName: '', amount: '', description: '', isHistorical: false, transactionDate: '', paymentMode: 'Cash' });
   const [searchTerm, setSearchTerm] = useState('');
   const [exportStart, setExportStart] = useState('');
@@ -187,11 +187,15 @@ function MaintenanceAdmin() {
           items: receiptData.items,
           amount: totalAmount,
           paymentMode: receiptData.paymentMode,
-          date: receiptData.transactionDate
+          date: receiptData.transactionDate,
+          autoCreateDues: true,
+          isHistorical: receiptData.isHistorical,
+          receiptNumber: receiptData.isHistorical ? receiptData.receiptNumber : undefined
        };
        const res = await api.post('/api/payments', payload);
-       setReceiptData({ houseId: '', items: [{ dueType: '', amount: '', details: '' }], paymentMode: 'Cash', transactionDate: new Date().toISOString().split('T')[0] });
+       setReceiptData({ houseId: '', items: [{ dueType: '', amount: '', details: '' }], paymentMode: 'Cash', transactionDate: new Date().toISOString().split('T')[0], isHistorical: false, receiptNumber: '' });
        setIsReceiptOpen(false);
+       fetchData();
        toast.success(`Receipt Generated: ${res.data.receiptNumber}`);
      } catch(err) {
        toast.error("Error generating receipt" + (err.response?.data?.error || err.message));
@@ -395,6 +399,10 @@ function MaintenanceAdmin() {
                       </select>
                     </div>
                     <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Receipt No. (Keep blank for Auto)</label>
+                      <input type="text" placeholder="e.g. 101 or REC-45" className="w-full border border-slate-200 bg-white p-2.5 rounded-lg outline-none focus:border-indigo-500 transition text-sm" value={formData.receiptNumber || ''} onChange={e => setFormData({...formData, receiptNumber: e.target.value})} />
+                    </div>
+                    <div>
                       <label className="flex items-center gap-2 mt-6 cursor-pointer">
                         <input type="checkbox" className="w-4 h-4 text-emerald-600" checked={formData.rebateApplied || false} onChange={e => {
                           const isPlot = houses.find(h => h._id === formData.houseId)?.propertyType === 'Plot';
@@ -461,7 +469,20 @@ function MaintenanceAdmin() {
                  <input type="date" required className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-emerald-500 transition" value={receiptData.transactionDate} onChange={e => setReceiptData({...receiptData, transactionDate: e.target.value})} />
               </div>
 
-              <div className="md:col-span-3 mt-4">
+              <div className="md:col-span-3 mt-1 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                 <label className="flex items-center gap-2 cursor-pointer">
+                   <input type="checkbox" className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500" checked={receiptData.isHistorical} onChange={e => setReceiptData({...receiptData, isHistorical: e.target.checked})} />
+                   <span className="text-sm font-bold text-emerald-900">This is a past / historical receipt record (marks all dues directly as Paid)</span>
+                 </label>
+                 {receiptData.isHistorical && (
+                   <div className="mt-3 animate-in slide-in-from-top-2 w-1/3">
+                     <label className="block text-xs font-semibold text-slate-700 mb-1">Historical Receipt No. (Keep blank for Auto)</label>
+                     <input type="text" placeholder="e.g. 104 or REC-89" className="w-full border border-slate-200 bg-white p-2.5 rounded-lg outline-none focus:border-emerald-500 transition text-sm font-mono tracking-widest text-slate-800" value={receiptData.receiptNumber || ''} onChange={e => setReceiptData({...receiptData, receiptNumber: e.target.value})} />
+                   </div>
+                 )}
+              </div>
+
+              <div className="md:col-span-3 mt-2">
                  <label className="block text-sm font-bold text-slate-700 mb-2 border-b border-slate-200 pb-2">Due Items to Receive</label>
                  {receiptData.items.map((item, idx) => (
                     <div key={idx} className="flex gap-2 items-center mb-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
