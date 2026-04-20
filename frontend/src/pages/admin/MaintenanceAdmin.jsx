@@ -42,38 +42,103 @@ function MaintenanceAdmin() {
 
   const downloadInvoice = (r) => {
     const printWindow = window.open('', '_blank');
+    const houseNo = r.houseId?.houseId || 'N/A';
+    const ownerName = r.houseId?.ownerName || 'N/A';
+    const dateStr = formatMonth(r.month);
+    const receiptNo = r.receiptNumber || 'N/A';
+    
+    let maintenance = 0, development = 0, transfer = 0, penalty = 0, other = 0;
+    
+    if (r.subject === 'Maintenance') maintenance = r.amount;
+    else if (r.subject === 'Development') development = r.amount;
+    else if (r.subject === 'Transfer Fee') transfer = r.amount;
+    else if (r.subject === 'Penalty') penalty = r.amount;
+    else other = r.amount;
+
+    const rebate = r.rebateApplied ? r.rebateAmount : 0;
+    const total = (r.amount || 0) - rebate;
+
+    const chequeNo = r.paymentMode === 'Cheque' && r.chequeDetails?.chequeNumber ? r.chequeDetails.chequeNumber : '______';
+    const chequeDateStr = r.paymentMode === 'Cheque' && r.chequeDetails?.date ? new Date(r.chequeDetails.date).toLocaleDateString() : '______';
+
     printWindow.document.write(`
-      <html><head><title>Invoice - ${formatMonth(r.month)}</title>
-      <style>
-        body { font-family: sans-serif; padding: 40px; color: #333; }
-        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;}
-        h1 { color: #4f46e5; margin: 0 0 10px 0; font-size: 28px; }
-        .details { margin-bottom: 30px; }
-        .details p { margin: 5px 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #e2e8f0; padding: 12px 16px; text-align: left; }
-        th { background-color: #f8fafc; font-weight: 600; text-transform: uppercase; font-size: 12px; }
-        .total { text-align: right; font-weight: bold; font-size: 18px; margin-top: 20px; }
-      </style></head>
-      <body>
-        <div class="header"><h1>SDS Society Invoice</h1></div>
-        <div class="details">
-          <p><strong>Receipt No:</strong> ${r.receiptNumber || 'N/A'}</p>
-          <p><strong>Bill To:</strong> House ${r.houseId?.houseId || 'N/A'}</p>
-          <p><strong>Date / Period:</strong> ${formatMonth(r.month)}</p>
-          <p><strong>Status:</strong> <span style="color: ${r.status === 'Paid' ? 'green' : 'red'};">${r.status.toUpperCase()}</span></p>
-          <p><strong>Payment Mode:</strong> ${r.paymentMode || 'Cash'} ${r.paymentMode === 'Cheque' && r.chequeDetails ? `(Bank: ${r.chequeDetails.bankName}, Chq No: ${r.chequeDetails.chequeNumber}, Date: ${new Date(r.chequeDetails.date).toLocaleDateString()})` : ''}</p>
-          ${r.rebateApplied ? `<p><strong>Rebate Applied:</strong> Yes, 1 Month Free (${r.financialYear})</p>` : ''}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SDS | Receipt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/home.png"> 
+    <style>
+    @page { size: A4 landscape; margin: 15mm; }
+    @media print {
+        html, body { width: 297mm; height: 210mm; }
+        body * { visibility: hidden; }
+        #receiptToPrint, #receiptToPrint * { visibility: visible; }
+        #receiptToPrint { position: absolute; left: 0; top: 0; width: 100%; }
+        .receipt { opacity: 0.95; box-shadow: none !important; border: 2px solid red !important; padding: 10mm !important; margin: 0 auto !important; width: 100% !important; background-color: #fff !important; page-break-inside: avoid; }
+        .table td, .table th { padding: 6px !important; font-size: 14px !important; }
+    }
+    .receipt { font-family: Arial, sans-serif; border: 2px solid red; padding: 30px; margin: 20px auto; max-width: 1000px; background-color: #fff; position: relative; opacity: 0.95; }
+    .receipt h1 { color: red; text-align: center; }
+    .receipt p, .receipt td { font-size: 16px; }
+    .society-info { text-align: center; margin: 0; font-size: 15px; }
+    table.table { border: 2px solid #000; margin-top: 15px; }
+    table.table thead { background-color: #343a40; color: #fff; }
+    table.table tbody tr:nth-child(even) { background-color: #f8f9fa; }
+    th, td { border: 1px solid #000; padding: 10px; text-align: left; }
+    .footer { font-size: 15px; margin-top: 20px; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container py-4">
+    <div id="receiptToPrint">
+        <div class="receipt shadow">
+            <div class="d-flex align-items-center mb-3">
+                <img src="/receiptlogo.jpg" alt="Society Logo" height="80" class="me-3">
+                <div class="flex-grow-1 text-center">
+                    <p class="society-info">Shree Ganeshay Namah</p>
+                    <h1><u>Shivdrashti Row House</u></h1>
+                    <p class="society-info">T.P.Scheme-44, Opp. Ganganagar Society, Beside CNG Pump,<br> Jahangirabad, Dandi Road, Surat-395005</p>
+                    <p class="society-info">Contact: +91-9805547446 | +91-9427152509</p>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6">House No: <strong>${houseNo}</strong></div>
+                <div class="col-6 text-end">Period: <strong>${dateStr}</strong></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6">Name: <strong>${ownerName}</strong></div>
+                <div class="col-6 text-end">Receipt No: <strong>${receiptNo}</strong></div>
+            </div>
+            <p>We have received the following payments for society:</p>
+            <table class="table table-bordered">
+                <tr><th>Sr No.</th><th>Description</th><th>Amount (₹)</th></tr>
+                <tr><td>1</td><td>Maintenance</td><td>₹${Number(maintenance).toFixed(2)}</td></tr>
+                <tr><td>2</td><td>Development</td><td>₹${Number(development).toFixed(2)}</td></tr>
+                <tr><td>3</td><td>Transfer Fee</td><td>₹${Number(transfer).toFixed(2)}</td></tr>
+                <tr><td>4</td><td>Penalty</td><td>₹${Number(penalty).toFixed(2)}</td></tr>
+                <tr><td>5</td><td>Other ${r.subject && !['Maintenance','Development','Transfer Fee','Penalty'].includes(r.subject) ? '('+r.subject+')' : ''}</td><td>₹${Number(other).toFixed(2)}</td></tr>
+                <tr><td>6</td><td>Rebate</td><td>-₹${Number(rebate).toFixed(2)}</td></tr>
+                <tr><td colspan="2"><strong>Total</strong></td><td><strong>₹${Number(total).toFixed(2)}</strong></td></tr>
+            </table>
+            <div class="footer mt-4">
+                <div class="row">
+                    <div class="col-md-6">Cheque No: <strong>${chequeNo}</strong></div>
+                    <div class="col-md-6 text-end">Date: <strong>${chequeDateStr}</strong></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-6">Signature of Payer: <strong>${ownerName}</strong></div>
+                    <div class="col-md-6 text-end">Receiver: <strong>Manager</strong></div>
+                </div>
+            </div>
         </div>
-        <table>
-          <thead><tr><th>Description</th><th>Amount</th></tr></thead>
-          <tbody>
-            <tr><td>${r.subject || 'Society Maintenance Dues'}</td><td>₹${r.amount}</td></tr>
-          </tbody>
-        </table>
-        <div class="total">Total: ₹${r.amount}</div>
-        <script>window.onload = () => { window.print(); window.close(); }</script>
-      </body></html>
+    </div>
+</div>
+<script>window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500);  }</script>
+</body></html>
     `);
     printWindow.document.close();
   };

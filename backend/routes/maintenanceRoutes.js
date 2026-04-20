@@ -166,6 +166,7 @@ router.post('/pay-advance', async (req, res) => {
             financialYear = `${startY}-${endY}`;
         }
 
+        const finalReceiptNumber = 'REC' + Date.now();
         const newMaint = new Maintenance({
             houseId: house._id,
             month: periodStr,
@@ -179,7 +180,8 @@ router.post('/pay-advance', async (req, res) => {
             rebateApplied: isRebateApplied,
             rebateAmount: rebateAmount,
             financialYear: financialYear,
-            chequeDetails: paymentMode === 'Cheque' ? chequeDetails : undefined
+            chequeDetails: paymentMode === 'Cheque' ? chequeDetails : undefined,
+            receiptNumber: finalReceiptNumber
         });
         await newMaint.save();
         generated.push(newMaint);
@@ -188,7 +190,7 @@ router.post('/pay-advance', async (req, res) => {
             houseId: house._id,
             amount: finalPayAmount,
             paymentMode,
-            receiptNumber: 'REC' + Date.now(),
+            receiptNumber: finalReceiptNumber,
             status: 'Completed'
         });
         await newPayment.save();
@@ -270,6 +272,9 @@ router.post('/', async (req, res) => {
                 items: [{ dueType: data.subject || 'Maintenance', amount: data.paidAmount, details: data.month }]
             });
             await newPayment.save();
+
+            newRecord.receiptNumber = finalReceiptNumber;
+            await newRecord.save();
         }
 
         if (data.isHistorical && data.rebateApplied) {
