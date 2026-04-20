@@ -125,6 +125,7 @@ function MyMaintenance() {
       <body>
         <div class="header"><h1>SDS Society Invoice</h1><p>Receipt of Payment</p></div>
         <div class="details">
+          <p><strong>Receipt No:</strong> ${r.receiptNumber || 'N/A'}</p>
           <p><strong>Bill To:</strong> House ${r.houseId?.houseId || 'N/A'}</p>
           <p><strong>Date / Period:</strong> ${formatMonth(r.month)}</p>
           <p><strong>Status:</strong> <span style="color: green;">PAID</span></p>

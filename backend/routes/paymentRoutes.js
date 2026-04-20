@@ -47,7 +47,8 @@ router.post('/', async (req, res) => {
                     status: req.body.isHistorical ? 'Paid' : 'Paid', // Custom receipts issued by admin are Paid immediately
                     adminApproved: true,
                     paymentMode: req.body.paymentMode,
-                    transactionDate: req.body.date || Date.now()
+                    transactionDate: req.body.date || Date.now(),
+                    receiptNumber: finalReceiptNumber
                 });
                 await newMaint.save();
             }
@@ -67,6 +68,7 @@ router.post('/', async (req, res) => {
                 if (req.body.chequeDetails) {
                     maint.chequeDetails = req.body.chequeDetails;
                 }
+                maint.receiptNumber = finalReceiptNumber;
                 await maint.save();
             }
         }

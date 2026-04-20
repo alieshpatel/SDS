@@ -58,6 +58,7 @@ function MaintenanceAdmin() {
       <body>
         <div class="header"><h1>SDS Society Invoice</h1></div>
         <div class="details">
+          <p><strong>Receipt No:</strong> ${r.receiptNumber || 'N/A'}</p>
           <p><strong>Bill To:</strong> House ${r.houseId?.houseId || 'N/A'}</p>
           <p><strong>Date / Period:</strong> ${formatMonth(r.month)}</p>
           <p><strong>Status:</strong> <span style="color: ${r.status === 'Paid' ? 'green' : 'red'};">${r.status.toUpperCase()}</span></p>
@@ -349,13 +350,13 @@ function MaintenanceAdmin() {
              
              <div className="md:col-span-1 border border-slate-200 bg-slate-50 p-3 rounded-xl flex gap-2">
                 <div className="flex-1">
-                   <label className="block text-xs font-semibold text-slate-700 mb-1">Billing Start Date</label>
-                   <input type="date" required className="w-full bg-transparent outline-none focus:text-indigo-600 transition text-sm font-medium" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} />
+                   <label className="block text-xs font-semibold text-slate-700 mb-1">Billing Start Month</label>
+                   <input type="month" required className="w-full bg-transparent outline-none focus:text-indigo-600 transition text-sm font-medium" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} />
                 </div>
                 <div className="w-px bg-slate-300"></div>
                 <div className="flex-1">
-                   <label className="block text-xs font-semibold text-slate-700 mb-1">Billing End Date</label>
-                   <input type="date" required className="w-full bg-transparent outline-none focus:text-indigo-600 transition text-sm font-medium" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} />
+                   <label className="block text-xs font-semibold text-slate-700 mb-1">Billing End Month</label>
+                   <input type="month" required className="w-full bg-transparent outline-none focus:text-indigo-600 transition text-sm font-medium" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} />
                 </div>
              </div>
 
@@ -495,11 +496,28 @@ function MaintenanceAdmin() {
                          <option value="Maintenance">Maintenance</option>
                          {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
                        </select>
-                       <input type="text" placeholder="Period / Details" className="flex-[2] border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" value={item.details} onChange={e => {
-                          const newItems = [...receiptData.items];
-                          newItems[idx].details = e.target.value;
-                          setReceiptData({...receiptData, items: newItems});
-                       }} />
+                       {item.dueType === 'Maintenance' ? (
+                         <div className="flex-[2] flex gap-2">
+                           <input type="month" required className="flex-1 border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" value={item.startMonth || ''} onChange={e => {
+                               const newItems = [...receiptData.items];
+                               newItems[idx].startMonth = e.target.value;
+                               newItems[idx].details = `${e.target.value} to ${newItems[idx].endMonth || ''}`;
+                               setReceiptData({...receiptData, items: newItems});
+                           }} title="Billing Start Month" />
+                           <input type="month" required className="flex-1 border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" value={item.endMonth || ''} onChange={e => {
+                               const newItems = [...receiptData.items];
+                               newItems[idx].endMonth = e.target.value;
+                               newItems[idx].details = `${newItems[idx].startMonth || ''} to ${e.target.value}`;
+                               setReceiptData({...receiptData, items: newItems});
+                           }} title="Billing End Month" />
+                         </div>
+                       ) : (
+                         <input type="text" placeholder="Period / Details" className="flex-[2] border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" value={item.details} onChange={e => {
+                            const newItems = [...receiptData.items];
+                            newItems[idx].details = e.target.value;
+                            setReceiptData({...receiptData, items: newItems});
+                         }} />
+                       )}
                        <input type="number" placeholder="Amt (₹)" required className="w-28 border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" value={item.amount} onChange={e => {
                           const newItems = [...receiptData.items];
                           newItems[idx].amount = e.target.value;

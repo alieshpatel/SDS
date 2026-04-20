@@ -19,7 +19,8 @@ const maintenanceSchema = new mongoose.Schema({
     rebateAmount: { type: Number, default: 0 },
     financialYear: { type: String },
     adminApproved: { type: Boolean, default: false },
-    transactionDate: { type: Date }
+    transactionDate: { type: Date },
+    receiptNumber: { type: String }
 }, { timestamps: true });
 
 maintenanceSchema.pre('save', function(next) {
