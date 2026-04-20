@@ -16,10 +16,14 @@ function MaintenanceAdmin() {
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState({ houseId: '', items: [{ dueType: '', amount: '', details: '' }], paymentMode: 'Cash', transactionDate: new Date().toISOString().split('T')[0] });
   const [expenseData, setExpenseData] = useState({ expenseName: '', vendorName: '', amount: '', description: '', isHistorical: false, transactionDate: '', paymentMode: 'Cash' });
   const [searchTerm, setSearchTerm] = useState('');
   const [exportStart, setExportStart] = useState('');
   const [exportEnd, setExportEnd] = useState('');
+
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   const formatMonth = (str) => {
     if (!str) return 'N/A';
@@ -158,14 +162,40 @@ function MaintenanceAdmin() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await api.post(API_MAINT, formData);
+      const payload = { ...formData };
+      if (dateRange.start && dateRange.end) {
+          payload.month = `${dateRange.start} to ${dateRange.end}`;
+          payload.year = parseInt(dateRange.start.substring(0, 4));
+      }
+      await api.post(API_MAINT, payload);
       setFormData({ houseId: '', month: '', year: new Date().getFullYear(), amount: '', subject: '', isHistorical: false, transactionDate: '', paymentMode: 'Cash' });
+      setDateRange({ start: '', end: '' });
       setIsFormOpen(false);
       fetchData();
       toast.success("Maintenance bill generated successfully.");
     } catch(err) {
       toast.error("Error adding maintenance: " + (err.response?.data?.error || err.message), { duration: 5000 });
     }
+  };
+
+  const handleReceiptSubmit = async (e) => {
+     e.preventDefault();
+     try {
+       const totalAmount = receiptData.items.reduce((s, item) => s + (parseFloat(item.amount) || 0), 0);
+       const payload = {
+          houseId: receiptData.houseId,
+          items: receiptData.items,
+          amount: totalAmount,
+          paymentMode: receiptData.paymentMode,
+          date: receiptData.transactionDate
+       };
+       const res = await api.post('/api/payments', payload);
+       setReceiptData({ houseId: '', items: [{ dueType: '', amount: '', details: '' }], paymentMode: 'Cash', transactionDate: new Date().toISOString().split('T')[0] });
+       setIsReceiptOpen(false);
+       toast.success(`Receipt Generated: ${res.data.receiptNumber}`);
+     } catch(err) {
+       toast.error("Error generating receipt" + (err.response?.data?.error || err.message));
+     }
   };
 
   const handleExpenseSubmit = async (e) => {
@@ -234,13 +264,19 @@ function MaintenanceAdmin() {
             <button onClick={() => exportData('pdf')} className="text-xs font-bold text-slate-700 px-3 py-1.5 hover:bg-white rounded shadow-sm transition">PDF</button>
           </div>
           <button 
-            onClick={() => { setIsExpenseOpen(!isExpenseOpen); setIsFormOpen(false); }} 
+            onClick={() => { setIsReceiptOpen(!isReceiptOpen); setIsExpenseOpen(false); setIsFormOpen(false); }} 
+            className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-emerald-200 transition flex items-center gap-2 transform hover:-translate-y-0.5">
+            <Receipt size={18} /> New Receipt
+          </button>
+
+          <button 
+            onClick={() => { setIsExpenseOpen(!isExpenseOpen); setIsFormOpen(false); setIsReceiptOpen(false); }} 
             className="bg-amber-100 text-amber-700 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-amber-200 transition flex items-center gap-2 transform hover:-translate-y-0.5">
             <Settings size={18} /> Log Expense
           </button>
 
           <button 
-            onClick={() => { setIsFormOpen(!isFormOpen); setIsExpenseOpen(false); }} 
+            onClick={() => { setIsFormOpen(!isFormOpen); setIsExpenseOpen(false); setIsReceiptOpen(false); }} 
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-indigo-700 transition flex items-center gap-2 transform hover:-translate-y-0.5">
             {isFormOpen ? "Cancel" : <><PlusCircle size={18} /> Custom Bill</>}
           </button>
@@ -307,13 +343,16 @@ function MaintenanceAdmin() {
               </select>
              </div>
              
-             <div className="md:col-span-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Billing Period</label>
-                <input type="text" placeholder="e.g. 2026-04 or 2026-04 to 2027-03" className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 transition" required value={formData.month} onChange={e => {
-                  const val = e.target.value;
-                  const year = val ? parseInt(val.substring(0,4)) : new Date().getFullYear();
-                  setFormData({...formData, month: val, year: year});
-                }} />
+             <div className="md:col-span-1 border border-slate-200 bg-slate-50 p-3 rounded-xl flex gap-2">
+                <div className="flex-1">
+                   <label className="block text-xs font-semibold text-slate-700 mb-1">Billing Start Date</label>
+                   <input type="date" required className="w-full bg-transparent outline-none focus:text-indigo-600 transition text-sm font-medium" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} />
+                </div>
+                <div className="w-px bg-slate-300"></div>
+                <div className="flex-1">
+                   <label className="block text-xs font-semibold text-slate-700 mb-1">Billing End Date</label>
+                   <input type="date" required className="w-full bg-transparent outline-none focus:text-indigo-600 transition text-sm font-medium" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} />
+                </div>
              </div>
 
              <div className="md:col-span-1">
@@ -390,6 +429,81 @@ function MaintenanceAdmin() {
              <button className="bg-slate-900 text-white p-3 rounded-xl font-bold hover:bg-slate-800 transition md:col-span-3 mt-4 shadow-sm flex items-center justify-center gap-2">
                <Receipt size={18} /> Issue Invoice Segment
              </button>
+           </form>
+        </div>
+      )}
+
+      {isReceiptOpen && (
+        <div className="bg-white p-6 rounded-2xl shadow-xl shadow-slate-200/50 border border-emerald-200 mb-8 animate-in zoom-in-95 duration-200">
+           <div className="flex justify-between items-center mb-4">
+             <h3 className="text-xl font-extrabold text-emerald-900 tracking-tight">Generate Multi-Due Receipt</h3>
+             <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">Automatically assigns Receipt No.</span>
+           </div>
+           
+           <form onSubmit={handleReceiptSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Target House</label>
+                <select className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-emerald-500 transition" required value={receiptData.houseId} onChange={e => setReceiptData({...receiptData, houseId: e.target.value})}>
+                 <option value="">-- Assign to House --</option>
+                 {houses.map(h => <option key={h._id} value={h._id}>{h.houseId} - {h.ownerName}</option>)}
+               </select>
+              </div>
+              <div className="md:col-span-1">
+                 <label className="block text-sm font-semibold text-slate-700 mb-1">Payment Mode</label>
+                 <select className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-emerald-500 transition" required value={receiptData.paymentMode} onChange={e => setReceiptData({...receiptData, paymentMode: e.target.value})}>
+                   <option value="Cash">Cash</option>
+                   <option value="Cheque">Cheque</option>
+                   <option value="Online">Online</option>
+                 </select>
+              </div>
+              <div className="md:col-span-1">
+                 <label className="block text-sm font-semibold text-slate-700 mb-1">Transaction Date</label>
+                 <input type="date" required className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-emerald-500 transition" value={receiptData.transactionDate} onChange={e => setReceiptData({...receiptData, transactionDate: e.target.value})} />
+              </div>
+
+              <div className="md:col-span-3 mt-4">
+                 <label className="block text-sm font-bold text-slate-700 mb-2 border-b border-slate-200 pb-2">Due Items to Receive</label>
+                 {receiptData.items.map((item, idx) => (
+                    <div key={idx} className="flex gap-2 items-center mb-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                       <select className="flex-1 border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" required value={item.dueType} onChange={e => {
+                          const newItems = [...receiptData.items];
+                          newItems[idx].dueType = e.target.value;
+                          setReceiptData({...receiptData, items: newItems});
+                       }}>
+                         <option value="">-- Type --</option>
+                         <option value="Maintenance">Maintenance</option>
+                         {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                       </select>
+                       <input type="text" placeholder="Period / Details" className="flex-[2] border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" value={item.details} onChange={e => {
+                          const newItems = [...receiptData.items];
+                          newItems[idx].details = e.target.value;
+                          setReceiptData({...receiptData, items: newItems});
+                       }} />
+                       <input type="number" placeholder="Amt (₹)" required className="w-28 border border-slate-200 bg-white p-2 rounded-lg outline-none focus:border-emerald-500 text-sm" value={item.amount} onChange={e => {
+                          const newItems = [...receiptData.items];
+                          newItems[idx].amount = e.target.value;
+                          setReceiptData({...receiptData, items: newItems});
+                       }} />
+                       {receiptData.items.length > 1 && (
+                         <button type="button" onClick={() => {
+                            const newItems = [...receiptData.items];
+                            newItems.splice(idx, 1);
+                            setReceiptData({...receiptData, items: newItems});
+                         }} className="text-rose-500 font-bold px-2 hover:bg-rose-50 rounded p-1 text-xs transition">X</button>
+                       )}
+                    </div>
+                 ))}
+                 <button type="button" onClick={() => {
+                    setReceiptData({...receiptData, items: [...receiptData.items, {dueType: '', amount: '', details: ''}]});
+                 }} className="text-emerald-700 font-bold text-xs hover:underline mt-2 inline-flex items-center gap-1">+ Add Another Due Type</button>
+              </div>
+
+              <div className="md:col-span-3 mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+                 <div className="text-lg font-semibold text-slate-600">Total Receipt Value: <span className="text-2xl font-extrabold text-emerald-800 ml-2">₹{receiptData.items.reduce((s, it) => s + (parseFloat(it.amount)||0), 0)}</span></div>
+                 <button className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm flex items-center justify-center gap-2">
+                    Generate & Save Receipt
+                 </button>
+              </div>
            </form>
         </div>
       )}
